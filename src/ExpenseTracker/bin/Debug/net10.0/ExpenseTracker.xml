@@ -1,0 +1,414 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ExpenseTracker</name>
+    </assembly>
+    <members>
+        <member name="T:ExpenseTracker.ErrorLogger">
+            <summary>Запись необработанных исключений в файл <c>error.log</c>.</summary>
+        </member>
+        <member name="M:ExpenseTracker.ErrorLogger.Write(System.Exception,System.String)">
+            <summary>Дописывает в журнал время, тип исключения и трассировку стека.</summary>
+            <param name="exception">Исключение, которое нужно зафиксировать.</param>
+            <param name="path">Путь к файлу журнала.</param>
+            <remarks>Ошибки самой записи журнала подавляются, чтобы не маскировать исходное исключение.</remarks>
+        </member>
+        <member name="T:ExpenseTracker.Formatting">
+            <summary>Единое форматирование чисел и дат (не зависит от региональных настроек ПК).</summary>
+        </member>
+        <member name="M:ExpenseTracker.Formatting.Money(System.Decimal)">
+            <summary>Сумма с двумя знаками после точки, например <c>1250.50</c>.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Formatting.Percent(System.Decimal)">
+            <summary>Процент с одним знаком после точки, например <c>12.5</c>.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Formatting.Date(System.DateOnly)">
+            <summary>Дата в формате ГГГГ-ММ-ДД.</summary>
+        </member>
+        <member name="T:ExpenseTracker.Models.AppData">
+            <summary>
+            Полное состояние программы, которое целиком сохраняется в <c>expenses.json</c>:
+            счётчик идентификаторов, справочник категорий и список расходов.
+            </summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.AppData.DefaultCategories">
+            <summary>Категории, создаваемые при первом запуске программы.</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.AppData.NextId">
+            <summary>Идентификатор, который получит следующая добавленная запись.</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.AppData.Categories">
+            <summary>Справочник категорий расходов (до 100 уникальных без учёта регистра названий).</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.AppData.Expenses">
+            <summary>Все записи о расходах в порядке добавления.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Models.AppData.CreateDefault">
+            <summary>
+            Создаёт данные «с нуля»: пустой список расходов и начальный справочник категорий.
+            </summary>
+            <returns>Новый экземпляр <see cref="T:ExpenseTracker.Models.AppData"/> с <see cref="P:ExpenseTracker.Models.AppData.NextId"/>, равным 1.</returns>
+        </member>
+        <member name="T:ExpenseTracker.Models.Expense">
+            <summary>
+            Запись об одном расходе пользователя.
+            </summary>
+            <remarks>
+            Объект хранится в файле <c>expenses.json</c>. Идентификатор назначается
+            последовательно и после удаления записи повторно не используется.
+            </remarks>
+        </member>
+        <member name="P:ExpenseTracker.Models.Expense.Id">
+            <summary>Уникальный целочисленный идентификатор записи (начиная с 1). Не меняется при редактировании.</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.Expense.Date">
+            <summary>Дата расхода. Допустимый диапазон: от 2000-01-01 до текущей даты ПК.</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.Expense.Category">
+            <summary>Название категории из справочника (в написании, принятом в справочнике).</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.Expense.Amount">
+            <summary>Сумма расхода: больше 0, не более 1 000 000 000,00, не более двух знаков после запятой.</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.Expense.Comment">
+            <summary>Необязательный комментарий длиной до 200 символов; <c>null</c>, если комментария нет.</summary>
+        </member>
+        <member name="T:ExpenseTracker.Models.ReportRow">
+            <summary>Строка отчёта: итог по одной категории.</summary>
+            <param name="Category">Название категории.</param>
+            <param name="Amount">Сумма расходов по категории за период.</param>
+            <param name="SharePercent">Доля категории в общей сумме, %, с точностью до 0,1.</param>
+        </member>
+        <member name="M:ExpenseTracker.Models.ReportRow.#ctor(System.String,System.Decimal,System.Decimal)">
+            <summary>Строка отчёта: итог по одной категории.</summary>
+            <param name="Category">Название категории.</param>
+            <param name="Amount">Сумма расходов по категории за период.</param>
+            <param name="SharePercent">Доля категории в общей сумме, %, с точностью до 0,1.</param>
+        </member>
+        <member name="P:ExpenseTracker.Models.ReportRow.Category">
+            <summary>Название категории.</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.ReportRow.Amount">
+            <summary>Сумма расходов по категории за период.</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.ReportRow.SharePercent">
+            <summary>Доля категории в общей сумме, %, с точностью до 0,1.</summary>
+        </member>
+        <member name="T:ExpenseTracker.Models.Report">
+            <summary>Отчёт о расходах по категориям за период.</summary>
+            <param name="Start">Начало периода (включительно).</param>
+            <param name="End">Конец периода (включительно).</param>
+            <param name="Rows">Строки отчёта, упорядоченные по сумме по убыванию; только категории с записями.</param>
+            <param name="Total">Общая сумма расходов за период.</param>
+        </member>
+        <member name="M:ExpenseTracker.Models.Report.#ctor(System.DateOnly,System.DateOnly,System.Collections.Generic.IReadOnlyList{ExpenseTracker.Models.ReportRow},System.Decimal)">
+            <summary>Отчёт о расходах по категориям за период.</summary>
+            <param name="Start">Начало периода (включительно).</param>
+            <param name="End">Конец периода (включительно).</param>
+            <param name="Rows">Строки отчёта, упорядоченные по сумме по убыванию; только категории с записями.</param>
+            <param name="Total">Общая сумма расходов за период.</param>
+        </member>
+        <member name="P:ExpenseTracker.Models.Report.Start">
+            <summary>Начало периода (включительно).</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.Report.End">
+            <summary>Конец периода (включительно).</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.Report.Rows">
+            <summary>Строки отчёта, упорядоченные по сумме по убыванию; только категории с записями.</summary>
+        </member>
+        <member name="P:ExpenseTracker.Models.Report.Total">
+            <summary>Общая сумма расходов за период.</summary>
+        </member>
+        <member name="T:ExpenseTracker.Services.CategoryService">
+            <summary>Реализация <see cref="T:ExpenseTracker.Services.ICategoryService"/> поверх общего состояния <see cref="T:ExpenseTracker.Models.AppData"/>.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Services.CategoryService.#ctor(ExpenseTracker.Storage.IDataStore,ExpenseTracker.Models.AppData)">
+            <summary>Создаёт сервис справочника категорий.</summary>
+            <param name="store">Хранилище, в которое сохраняются изменения.</param>
+            <param name="data">Загруженное состояние программы (общее с другими сервисами).</param>
+        </member>
+        <member name="M:ExpenseTracker.Services.CategoryService.GetAll">
+            <inheritdoc />
+        </member>
+        <member name="M:ExpenseTracker.Services.CategoryService.Find(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:ExpenseTracker.Services.CategoryService.Add(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:ExpenseTracker.Services.CategoryService.Remove(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="T:ExpenseTracker.Services.CsvReportExporter">
+            <summary>
+            Экспорт отчёта в CSV: кодировка UTF-8, разделитель «;», заголовок «Категория;Сумма;Доля, %»,
+            имя файла <c>report_ГГГГ-ММ-ДД.csv</c> (дата — текущая).
+            </summary>
+        </member>
+        <member name="M:ExpenseTracker.Services.CsvReportExporter.#ctor(System.String,System.TimeProvider)">
+            <summary>Создаёт экспортёр.</summary>
+            <param name="directory">Каталог для файла; по умолчанию текущий каталог.</param>
+            <param name="timeProvider">Источник текущей даты; по умолчанию системные часы.</param>
+        </member>
+        <member name="M:ExpenseTracker.Services.CsvReportExporter.Export(ExpenseTracker.Models.Report)">
+            <inheritdoc />
+            <exception cref="T:System.IO.IOException">Если файл не удалось записать.</exception>
+        </member>
+        <member name="T:ExpenseTracker.Services.ExpenseService">
+            <summary>
+            Реализация <see cref="T:ExpenseTracker.Services.IExpenseService"/>: хранит записи в памяти и после каждого
+            изменения сохраняет данные через <see cref="T:ExpenseTracker.Storage.IDataStore"/>.
+            </summary>
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseService.#ctor(ExpenseTracker.Storage.IDataStore,ExpenseTracker.Models.AppData,System.TimeProvider)">
+            <summary>Создаёт сервис поверх уже загруженных данных.</summary>
+            <param name="store">Хранилище, в которое сохраняются изменения.</param>
+            <param name="data">Загруженное состояние программы (общее с другими сервисами).</param>
+            <param name="timeProvider">Источник текущей даты; по умолчанию системные часы.</param>
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseService.Add(System.Decimal,System.DateOnly,System.String,System.String)">
+            <inheritdoc />
+            <example>
+            <code>
+            var expense = service.Add(350.50m, new DateOnly(2026, 10, 1), "Продукты", "Молоко и хлеб");
+            Console.WriteLine(expense.Id); // 1
+            </code>
+            </example>
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseService.GetById(System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseService.Update(System.Int32,System.Decimal,System.DateOnly,System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseService.Delete(System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseService.GetAll">
+            <inheritdoc />
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseService.Filter(System.DateOnly,System.DateOnly,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="T:ExpenseTracker.Services.ExpenseValidator">
+            <summary>
+            Правила проверки и разбора вводимых значений (раздел 4.1 ТЗ).
+            Методы <c>Check*</c> возвращают текст ошибки или <c>null</c>, если значение допустимо.
+            </summary>
+        </member>
+        <member name="F:ExpenseTracker.Services.ExpenseValidator.MaxAmount">
+            <summary>Максимально допустимая сумма расхода.</summary>
+        </member>
+        <member name="F:ExpenseTracker.Services.ExpenseValidator.MaxCommentLength">
+            <summary>Максимальная длина комментария.</summary>
+        </member>
+        <member name="F:ExpenseTracker.Services.ExpenseValidator.MaxCategoryNameLength">
+            <summary>Максимальная длина названия категории.</summary>
+        </member>
+        <member name="F:ExpenseTracker.Services.ExpenseValidator.MaxCategories">
+            <summary>Максимальное число категорий в справочнике.</summary>
+        </member>
+        <member name="F:ExpenseTracker.Services.ExpenseValidator.MinDate">
+            <summary>Самая ранняя допустимая дата расхода.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseValidator.CheckAmount(System.Decimal)">
+            <summary>Проверяет сумму расхода.</summary>
+            <param name="amount">Проверяемая сумма.</param>
+            <returns>Текст ошибки либо <c>null</c>, если сумма допустима.</returns>
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseValidator.CheckDate(System.DateOnly,System.DateOnly)">
+            <summary>Проверяет дату расхода.</summary>
+            <param name="date">Проверяемая дата.</param>
+            <param name="today">Текущая дата ПК (верхняя граница).</param>
+            <returns>Текст ошибки либо <c>null</c>, если дата допустима.</returns>
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseValidator.CheckComment(System.String)">
+            <summary>Проверяет комментарий.</summary>
+            <param name="comment">Комментарий или <c>null</c>.</param>
+            <returns>Текст ошибки либо <c>null</c>, если комментарий допустим.</returns>
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseValidator.CheckCategoryName(System.String)">
+            <summary>Проверяет название категории (длина от 1 до 50 символов, не пустое).</summary>
+            <param name="name">Название категории.</param>
+            <returns>Текст ошибки либо <c>null</c>, если название допустимо.</returns>
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseValidator.TryParseAmount(System.String,System.Decimal@)">
+            <summary>Разбирает сумму из строки; допускает и точку, и запятую как разделитель.</summary>
+            <param name="input">Введённая строка.</param>
+            <param name="amount">Результат разбора.</param>
+            <returns><c>true</c>, если строка является числом.</returns>
+        </member>
+        <member name="M:ExpenseTracker.Services.ExpenseValidator.TryParseDate(System.String,System.DateOnly@)">
+            <summary>Разбирает дату строго в формате ГГГГ-ММ-ДД.</summary>
+            <param name="input">Введённая строка.</param>
+            <param name="date">Результат разбора.</param>
+            <returns><c>true</c>, если строка соответствует формату и является существующей датой.</returns>
+        </member>
+        <member name="T:ExpenseTracker.Services.ICategoryService">
+            <summary>Операции над справочником категорий расходов.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Services.ICategoryService.GetAll">
+            <summary>Возвращает все категории справочника.</summary>
+            <returns>Названия категорий в порядке добавления.</returns>
+        </member>
+        <member name="M:ExpenseTracker.Services.ICategoryService.Find(System.String)">
+            <summary>Ищет категорию по названию без учёта регистра.</summary>
+            <param name="name">Искомое название.</param>
+            <returns>Название в написании справочника или <c>null</c>, если категории нет.</returns>
+        </member>
+        <member name="M:ExpenseTracker.Services.ICategoryService.Add(System.String)">
+            <summary>Добавляет категорию.</summary>
+            <param name="name">Название (1–50 символов, уникальное без учёта регистра).</param>
+            <returns>Добавленное название (без пробелов по краям).</returns>
+            <exception cref="T:System.ArgumentException">Если название пустое или длиннее 50 символов.</exception>
+            <exception cref="T:System.InvalidOperationException">Если такая категория уже есть или достигнут лимит в 100 категорий.</exception>
+        </member>
+        <member name="M:ExpenseTracker.Services.ICategoryService.Remove(System.String)">
+            <summary>Удаляет категорию, если с ней не связано ни одной записи.</summary>
+            <param name="name">Название категории.</param>
+            <exception cref="T:System.Collections.Generic.KeyNotFoundException">Если категории нет в справочнике.</exception>
+            <exception cref="T:System.InvalidOperationException">Если с категорией связаны записи о расходах.</exception>
+        </member>
+        <member name="T:ExpenseTracker.Services.IExpenseService">
+            <summary>Операции над записями о расходах.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Services.IExpenseService.Add(System.Decimal,System.DateOnly,System.String,System.String)">
+            <summary>Добавляет новую запись.</summary>
+            <param name="amount">Сумма расхода.</param>
+            <param name="date">Дата расхода.</param>
+            <param name="category">Название категории из справочника (регистр не важен).</param>
+            <param name="comment">Комментарий или <c>null</c>.</param>
+            <returns>Созданная запись с присвоенным ID.</returns>
+            <exception cref="T:System.ArgumentException">Если значение нарушает ограничения раздела 4.1 ТЗ.</exception>
+        </member>
+        <member name="M:ExpenseTracker.Services.IExpenseService.GetById(System.Int32)">
+            <summary>Ищет запись по ID.</summary>
+            <param name="id">Идентификатор записи.</param>
+            <returns>Найденная запись или <c>null</c>.</returns>
+        </member>
+        <member name="M:ExpenseTracker.Services.IExpenseService.Update(System.Int32,System.Decimal,System.DateOnly,System.String,System.String)">
+            <summary>Заменяет значения полей записи; ID не меняется.</summary>
+            <param name="id">Идентификатор изменяемой записи.</param>
+            <param name="amount">Новая сумма.</param>
+            <param name="date">Новая дата.</param>
+            <param name="category">Новая категория.</param>
+            <param name="comment">Новый комментарий или <c>null</c>.</param>
+            <exception cref="T:System.Collections.Generic.KeyNotFoundException">Если записи с таким ID нет.</exception>
+            <exception cref="T:System.ArgumentException">Если новые значения нарушают ограничения.</exception>
+        </member>
+        <member name="M:ExpenseTracker.Services.IExpenseService.Delete(System.Int32)">
+            <summary>Удаляет запись по ID. Освободившийся ID повторно не назначается.</summary>
+            <param name="id">Идентификатор записи.</param>
+            <exception cref="T:System.Collections.Generic.KeyNotFoundException">Если записи с таким ID нет.</exception>
+        </member>
+        <member name="M:ExpenseTracker.Services.IExpenseService.GetAll">
+            <summary>Возвращает все записи: по дате по убыванию, при равных датах — по ID по убыванию.</summary>
+            <returns>Отсортированный список записей.</returns>
+        </member>
+        <member name="M:ExpenseTracker.Services.IExpenseService.Filter(System.DateOnly,System.DateOnly,System.String)">
+            <summary>Отбирает записи за период и, при необходимости, по категории.</summary>
+            <param name="start">Начальная дата (включительно).</param>
+            <param name="end">Конечная дата (включительно).</param>
+            <param name="category">Категория или <c>null</c>, если категория не важна.</param>
+            <returns>Отобранные записи в порядке, как у <see cref="M:ExpenseTracker.Services.IExpenseService.GetAll"/>.</returns>
+            <exception cref="T:System.ArgumentException">Если начальная дата позже конечной или категории нет в справочнике.</exception>
+        </member>
+        <member name="T:ExpenseTracker.Services.IReportExporter">
+            <summary>Экспорт отчёта во внешний файл.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Services.IReportExporter.Export(ExpenseTracker.Models.Report)">
+            <summary>Сохраняет отчёт в файл.</summary>
+            <param name="report">Отчёт для экспорта.</param>
+            <returns>Полный путь созданного файла.</returns>
+        </member>
+        <member name="T:ExpenseTracker.Services.IReportService">
+            <summary>Формирование отчёта о расходах по категориям.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Services.IReportService.Build(System.DateOnly,System.DateOnly)">
+            <summary>Строит отчёт за период: сумма и доля по каждой категории, имеющей записи.</summary>
+            <param name="start">Начальная дата (включительно).</param>
+            <param name="end">Конечная дата (включительно).</param>
+            <returns>Отчёт со строками по убыванию суммы и общей суммой за период.</returns>
+            <exception cref="T:System.ArgumentException">Если начальная дата позже конечной.</exception>
+        </member>
+        <member name="T:ExpenseTracker.Services.ReportService">
+            <summary>Реализация <see cref="T:ExpenseTracker.Services.IReportService"/>: группирует отобранные записи по категориям.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Services.ReportService.#ctor(ExpenseTracker.Services.IExpenseService)">
+            <summary>Создаёт сервис отчётов.</summary>
+            <param name="expenses">Сервис, из которого берутся записи за период.</param>
+        </member>
+        <member name="M:ExpenseTracker.Services.ReportService.Build(System.DateOnly,System.DateOnly)">
+            <inheritdoc />
+        </member>
+        <member name="T:ExpenseTracker.Storage.LoadResult">
+            <summary>Результат загрузки данных.</summary>
+            <param name="Data">Загруженное (или заново созданное) состояние программы.</param>
+            <param name="Notice">Сообщение для пользователя (файл создан или был повреждён); <c>null</c>, если всё штатно.</param>
+        </member>
+        <member name="M:ExpenseTracker.Storage.LoadResult.#ctor(ExpenseTracker.Models.AppData,System.String)">
+            <summary>Результат загрузки данных.</summary>
+            <param name="Data">Загруженное (или заново созданное) состояние программы.</param>
+            <param name="Notice">Сообщение для пользователя (файл создан или был повреждён); <c>null</c>, если всё штатно.</param>
+        </member>
+        <member name="P:ExpenseTracker.Storage.LoadResult.Data">
+            <summary>Загруженное (или заново созданное) состояние программы.</summary>
+        </member>
+        <member name="P:ExpenseTracker.Storage.LoadResult.Notice">
+            <summary>Сообщение для пользователя (файл создан или был повреждён); <c>null</c>, если всё штатно.</summary>
+        </member>
+        <member name="T:ExpenseTracker.Storage.IDataStore">
+            <summary>Постоянное хранилище состояния программы.</summary>
+        </member>
+        <member name="M:ExpenseTracker.Storage.IDataStore.Load">
+            <summary>Загружает данные; при отсутствии или повреждении файла создаёт новые.</summary>
+            <returns>Данные и необязательное сообщение для пользователя.</returns>
+        </member>
+        <member name="M:ExpenseTracker.Storage.IDataStore.Save(ExpenseTracker.Models.AppData)">
+            <summary>Сохраняет данные целиком.</summary>
+            <param name="data">Состояние программы.</param>
+            <exception cref="T:System.IO.IOException">Если записать данные не удалось.</exception>
+        </member>
+        <member name="T:ExpenseTracker.Storage.JsonDataStore">
+            <summary>
+            Хранение данных в JSON-файле. Запись выполняется через временный файл <c>.tmp</c>,
+            повреждённый файл не удаляется, а переименовывается в <c>.bak_ГГГГММДД_ЧЧММСС</c>.
+            </summary>
+        </member>
+        <member name="M:ExpenseTracker.Storage.JsonDataStore.#ctor(System.String)">
+            <summary>Создаёт хранилище.</summary>
+            <param name="path">Путь к файлу данных (например, <c>expenses.json</c>).</param>
+        </member>
+        <member name="M:ExpenseTracker.Storage.JsonDataStore.Load">
+            <inheritdoc />
+        </member>
+        <member name="M:ExpenseTracker.Storage.JsonDataStore.Save(ExpenseTracker.Models.AppData)">
+            <inheritdoc />
+        </member>
+        <member name="T:ExpenseTracker.UI.ConsoleMenu">
+            <summary>
+            Текстовый диалог с пользователем в консоли: главное меню, ввод и проверка значений,
+            вывод таблиц (Spectre.Console). Бизнес-логики здесь нет — она в сервисах.
+            </summary>
+        </member>
+        <member name="M:ExpenseTracker.UI.ConsoleMenu.#ctor(ExpenseTracker.Services.IExpenseService,ExpenseTracker.Services.ICategoryService,ExpenseTracker.Services.IReportService,ExpenseTracker.Services.IReportExporter,System.TimeProvider)">
+            <summary>Создаёт меню.</summary>
+            <param name="expenses">Сервис записей о расходах.</param>
+            <param name="categories">Сервис справочника категорий.</param>
+            <param name="reports">Сервис отчётов.</param>
+            <param name="exporter">Экспортёр отчёта в файл.</param>
+            <param name="timeProvider">Источник текущей даты; по умолчанию системные часы.</param>
+        </member>
+        <member name="M:ExpenseTracker.UI.ConsoleMenu.Run">
+            <summary>
+            Запускает главный цикл меню; возвращает управление при выборе пункта «0» или при закрытии ввода.
+            </summary>
+            <remarks>
+            Ошибки бизнес-правил (<see cref="T:System.ArgumentException"/>, <see cref="T:System.Collections.Generic.KeyNotFoundException"/>,
+            <see cref="T:System.InvalidOperationException"/>) выводятся пользователю. Остальные исключения
+            передаются вызывающему коду и обрабатываются как внутренняя ошибка.
+            </remarks>
+        </member>
+    </members>
+</doc>
